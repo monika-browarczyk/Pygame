@@ -65,29 +65,32 @@ def main():
 
     pygame.init()
     FPSCLOCK = pygame.time.Clock()
-    pygame.display.set_icon(pygame.image.load('gameicon.png'))
+    pygame.display.set_icon(pygame.image.load('assets/gameicon.png'))
     DISPLAYSURF = pygame.display.set_mode((WINWIDTH, WINHEIGHT))
     pygame.display.set_caption('Squirrel Eat Squirrel')
     BASICFONT = pygame.font.Font('freesansbold.ttf', 32)
 
     # load the image files
-    L_SQUIR_IMG = pygame.image.load('squirrel.png')
+    L_SQUIR_IMG = pygame.image.load('assets/squirrel.png')
     R_SQUIR_IMG = pygame.transform.flip(L_SQUIR_IMG, True, False)
     GRASSIMAGES = []
     for i in range(1, 5):
-        GRASSIMAGES.append(pygame.image.load('grass%s.png' % i))
+        GRASSIMAGES.append(pygame.image.load('assets/grass%s.png' % i))
 
     while True:
         runGame()
 
 
 def runGame():
+    global SQUIRRELMINSPEED, SQUIRRELMAXSPEED
     # set up variables for the start of a new game
     invulnerableMode = False  # if the player is invulnerable
     invulnerableStartTime = 0 # time the player became invulnerable
     gameOverMode = False      # if the player has lost
     gameOverStartTime = 0     # time the player lost
     winMode = False           # if the player has won
+    score = 0
+    level = 1
 
     # create the surfaces to hold game text
     gameOverSurf = BASICFONT.render('Game Over', True, WHITE)
@@ -101,6 +104,11 @@ def runGame():
     winSurf2 = BASICFONT.render('(Press "r" to restart.)', True, WHITE)
     winRect2 = winSurf2.get_rect()
     winRect2.center = (HALF_WINWIDTH, HALF_WINHEIGHT + 30)
+
+    levelUpSurf = BASICFONT.render('LEVEL UP!', True, WHITE)
+    levelUpRect = levelUpSurf.get_rect(center=(HALF_WINWIDTH, HALF_WINHEIGHT - 50))
+    showLevelUp = False
+    levelUpStartTime = 0
 
     # camerax and cameray are the top left of where the camera view is
     camerax = 0
@@ -211,6 +219,15 @@ def runGame():
 
         # draw the health meter
         drawHealthMeter(playerObj['health'])
+        scoreSurf = BASICFONT.render(f'Score: {score}', True, WHITE)
+        levelSurf = BASICFONT.render(f'Level: {level}', True, WHITE)
+        DISPLAYSURF.blit(scoreSurf, (10, 40))
+        DISPLAYSURF.blit(levelSurf, (10, 70))
+
+        if showLevelUp:
+            DISPLAYSURF.blit(levelUpSurf, levelUpRect)
+            if time.time() - levelUpStartTime > 2:
+                showLevelUp = False
 
         for event in pygame.event.get(): # event handling loop
             if event.type == QUIT:
@@ -279,6 +296,13 @@ def runGame():
                         # player is larger and eats the squirrel
                         playerObj['size'] += int( (sqObj['width'] * sqObj['height'])**0.2 ) + 1
                         del squirrelObjs[i]
+                        score += 1
+                        if score % 5 == 0:
+                            level += 1
+                            showLevelUp = True
+                            levelUpStartTime = time.time()
+                            SQUIRRELMINSPEED += 1
+                            SQUIRRELMAXSPEED += 1
 
                         if playerObj['facing'] == LEFT:
                             playerObj['surface'] = pygame.transform.scale(L_SQUIR_IMG, (playerObj['size'], playerObj['size']))
